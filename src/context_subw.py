@@ -672,16 +672,18 @@ def evaluate(model, data, beam):
     data_len = 0
     for i, batch in enumerate(data):
         for instance in batch:
-            dy.renew_cg()
+            dy.renew_cg(autobatching=False)
             model.param_init(instance, test_time=True)
+            k=0
             for pos,item in enumerate(instance):
+                k+=1
                 input_word = item.input
                 output = item.output
                 predictions = model.predict(input_word, pos, beam) # list of (cost, prediction) sorted by cost
                 prediction = predictions[0][1]
                 if prediction == output:
                     correct += 1
-                #if i < 1: print(input_word, output, prediction)
+                if i ==0 and k < 5: print(input_word, output, prediction)
                 final_results.append((input_word,prediction))
                 data_len += 1
     accuracy = correct / data_len
@@ -732,7 +734,8 @@ def model_training(model_hyperparams, model, trainer, objective, epochs, train_d
 
         batch_number = 0
         for i, batch in enumerate(train_data_epoch):
-            dy.renew_cg()
+            i+=1
+            dy.renew_cg(autobatching=True)
             for instance in batch:
                 loss = objective(instance)
                 batch_loss.append(loss)
@@ -746,12 +749,12 @@ def model_training(model_hyperparams, model, trainer, objective, epochs, train_d
             if i == batches_number_total or  i%report_freq == 0:
                 avg_train_loss = train_loss /train_data.length
 
-                print('\t...finished in {:.3f} sec'.format(time.time() - then))
+                print('\t...finished epoch {} batches {} in {:.3f} sec'.format(epoch, i, time.time() - then))
                 #trainer.status()
 
                 # get train accuracy
                 print('evaluating on train...')
-                dy.renew_cg() # new graph for all the examples
+                dy.renew_cg(autobatching=False) # new graph for all the examples
                 then = time.time()
                 train_accuracy_dict, _ = evaluate(model, train_data.iter(indices=sanity_set_size), \
                     beam=train_hyperparams['BEAM'])
@@ -760,7 +763,7 @@ def model_training(model_hyperparams, model, trainer, objective, epochs, train_d
                 # get dev accuracy
                 print('evaluating on dev...')
                 then = time.time()
-                dy.renew_cg() # new graph for all the examples
+                dy.renew_cg(autobatching=False) # new graph for all the examples
                 dev_accuracy_dict, _ = evaluate(model, dev_data_eval, \
                     beam=train_hyperparams['BEAM'])
                 print('\t...finished in {:.3f} sec'.format(time.time() - then))
@@ -781,7 +784,7 @@ def model_training(model_hyperparams, model, trainer, objective, epochs, train_d
                     break
 
 
-                log_info = (':'.join([epoch,i]), avg_train_loss, train_accuracy_dict['Accuracy'], dev_accuracy_dict['Accuracy'])
+                log_info = (':'.join([str(epoch),str(i)]), avg_train_loss, train_accuracy_dict['Accuracy'], dev_accuracy_dict['Accuracy'])
                 print('epoch-batch: {} train loss: {:.4f} train accuracy: {:.4f} dev accuracy: {:.4f} \
                             best dev accuracy: {:.4f} patience = {}'.format(\
                             *log_info, best_dev_accuracy, patience))
