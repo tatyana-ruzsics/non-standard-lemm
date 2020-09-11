@@ -781,7 +781,7 @@ def model_training(model_hyperparams, model, trainer, objective, epochs, train_d
                     break
 
 
-                log_info = (':'.join(epoch,i), avg_train_loss, train_accuracy_dict['Accuracy'], dev_accuracy_dict['Accuracy'])
+                log_info = (':'.join([epoch,i]), avg_train_loss, train_accuracy_dict['Accuracy'], dev_accuracy_dict['Accuracy'])
                 print('epoch-batch: {} train loss: {:.4f} train accuracy: {:.4f} dev accuracy: {:.4f} \
                             best dev accuracy: {:.4f} patience = {}'.format(\
                             *log_info, best_dev_accuracy, patience))
