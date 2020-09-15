@@ -707,9 +707,10 @@ def model_training(model_hyperparams, model, trainer, objective, epochs, train_d
     log_to_file(log_file_name, '\t'.join(str(x) for x in header_info))
     #trainer.status()
 
-    for epoch in range(epochs):
-        print('Start training...')
-        then = time.time()
+    done = False
+    print('Start training...')
+    #for epoch in range(epochs):
+    while ((not done) and epoch < epochs):    
 
         # compute loss for each sample and update
         train_loss = 0.  # total train loss
@@ -734,6 +735,7 @@ def model_training(model_hyperparams, model, trainer, objective, epochs, train_d
 
         batch_number = 0
         for i, batch in enumerate(train_data_epoch):
+            then = time.time()
             i+=1
             dy.renew_cg(autobatching=True)
             for instance in batch:
@@ -778,10 +780,6 @@ def model_training(model_hyperparams, model, trainer, objective, epochs, train_d
                 else:
                     patience += 1
 
-                # found "perfect" model
-                if dev_accuracy == 1:
-                    train_progress_bar.finish()
-                    break
 
 
                 log_info = (':'.join([str(epoch),str(i)]), avg_train_loss, train_accuracy_dict['Accuracy'], dev_accuracy_dict['Accuracy'])
@@ -790,13 +788,21 @@ def model_training(model_hyperparams, model, trainer, objective, epochs, train_d
                             *log_info, best_dev_accuracy, patience))
                 log_to_file(log_file_name, '\t'.join(str(x) for x in log_info))
 
+                # found "perfect" model
+                if dev_accuracy == 1:
+                    train_progress_bar.finish()
+                    done = True
+                    break
 
                 if patience == train_hyperparams['PATIENCE']:
                     print('out of patience after {} epochs'.format(epoch))
                     train_progress_bar.finish()
+                    done = True
                     break
+                    
         # finished epoch
         train_progress_bar.update(epoch)
+        epoch += 1
                 
     print('finished training.')
     return 
