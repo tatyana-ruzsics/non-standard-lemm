@@ -710,6 +710,7 @@ def model_training(model_hyperparams, model, trainer, objective, epochs, train_d
     done = False
     print('Start training...')
     #for epoch in range(epochs):
+    epoch=0
     while ((not done) and epoch < epochs):    
 
         # compute loss for each sample and update
